@@ -83,7 +83,6 @@ describe('tarmount', () => {
                 expect(res.statusCode).to.equal(200);
                 expect(res.headers['content-length']).to.equal(12);
                 expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.headers.vary).to.contain('accept-encoding');
                 expect(res.payload).to.equal('i am file-2\n');
                 done();
             });
@@ -100,7 +99,6 @@ describe('tarmount', () => {
                 expect(res.statusCode).to.equal(200);
                 expect(res.headers['content-length']).to.equal(12);
                 expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.headers.vary).to.contain('accept-encoding');
                 expect(res.payload).to.equal('i am file-1\n');
                 done();
             });
