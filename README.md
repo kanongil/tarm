@@ -2,6 +2,8 @@
 
 Tarmount handler plugin for hapi.js.
 
+[![Build Status](https://travis-ci.org/kanongil/tarm.svg?branch=master)](https://travis-ci.org/kanongil/tarm)
+
 **tarm** provides a new `tarmount` [handler](https://github.com/hapijs/hapi/blob/master/API.md#serverhandlername-method)
 method for serving the contents of tar files using `inert`.
 
