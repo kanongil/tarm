@@ -7,13 +7,6 @@ Tarmount handler plugin for hapi.js.
 **tarm** provides a new `tarmount` [handler](https://github.com/hapijs/hapi/blob/master/API.md#serverhandlername-method)
 method for serving the contents of tar files using `inert`.
 
-## Index
-
-  - [Examples](#examples)
-      - [Static file server](#static-file-server)
-  - [Usage](#usage)
-      - [The `tarmount` handler](#the-directory-handler)
-
 ## Examples
 
 **tarm** enables a number of common use cases for serving static assets.
