@@ -162,6 +162,21 @@ describe('tarmount', () => {
             });
         });
 
+        it('handles base-256 encoded file sizes', (done) => {
+
+            const server = provisionServer();
+            server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.BASE_256_SIZE } } });
+
+            server.inject('/directory/test.txt', (res) => {
+
+                expect(res.statusCode).to.equal(200);
+                expect(res.headers['content-length']).to.equal(12);
+                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+                expect(res.payload).to.equal('hello world\n');
+                done();
+            });
+        });
+
         it('returns an embedded file with gzip encoding', (done) => {
 
             const server = provisionServer();

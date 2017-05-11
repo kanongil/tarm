@@ -14,6 +14,7 @@ exports.NAME_IS_100_TAR = Path.join(__dirname, 'name-is-100.tar');
 exports.INVALID_TGZ = Path.join(__dirname, 'invalid.tgz');
 exports.SPACE_TAR_GZ = Path.join(__dirname, 'space.tar');
 exports.GNU_LONG_PATH = Path.join(__dirname, 'gnu-long-path.tar');
+exports.BASE_256_SIZE = Path.join(__dirname, 'base-256-size.tar');
 exports.BASE_256_UID_GID = Path.join(__dirname, 'base-256-uid-gid.tar');
 exports.LARGE_UID_GID = Path.join(__dirname, 'large-uid-gid.tar');
 exports.HIDDEN_FILE = Path.join(__dirname, 'hidden-file.tar');
