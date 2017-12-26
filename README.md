@@ -4,7 +4,7 @@ Tarmount handler plugin for hapi.js.
 
 [![Build Status](https://travis-ci.org/kanongil/tarm.svg?branch=master)](https://travis-ci.org/kanongil/tarm)
 
-**tarm** provides a new `tarmount` [handler](https://github.com/hapijs/hapi/blob/master/API.md#serverhandlername-method)
+**tarm** provides a new `tarmount` [handler](https://github.com/hapijs/hapi/blob/master/API.md#route.options.handler)
 method for serving the contents of tar files using `inert`.
 
 ## Examples
@@ -18,42 +18,42 @@ The following creates a basic static file server that can be used to serve conte
 
 ```js
 const Path = require('path');
+
 const Hapi = require('hapi');
 const Inert = require('inert');
 const Tarm = require('tarm');
 
-const server = new Hapi.Server();
-server.connection({ port: 3000 });
+const server = Hapi.Server({ port: 3000 });
 
-server.register([Inert, Tarm], () => {});
+const provision = async () => {
 
-server.route({
-    method: 'GET',
-    path: '/{param*}',
-    handler: {
-        tarmount: {
-            path: Path.join(__dirname, 'site.tar')
+    await server.register([Inert, Tarm]);
+
+    server.route({
+        method: 'GET',
+        path: '/{param*}',
+        handler: {
+            tarmount: {
+                path: Path.join(__dirname, 'site.tar')
+            }
         }
-    }
-});
+    });
 
-server.start((err) => {
-
-    if (err) {
-        throw err;
-    }
+    await server.start();
 
     console.log('Server running at:', server.info.uri);
-});
+};
+
+provision();
 ```
 
 ## Usage
 
 After registration, this plugin enables the `'tarmount'` route handler.
-Note that inert is required to be registered as well. Eg:
+Note that `inert` is required to be registered as well. Eg:
 
 ```js
-server.register([Inert, Tarm], () => {});
+await server.register([Inert, Tarm]);
 ```
 
 ### The `tarmount` handler

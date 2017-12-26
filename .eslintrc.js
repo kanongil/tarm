@@ -1,1 +1,6 @@
-module.exports = require('eslint-config-hapi');
+module.exports = {
+    extends: 'eslint-config-hapi',
+    parserOptions: {
+        ecmaVersion: 2017
+    }
+}

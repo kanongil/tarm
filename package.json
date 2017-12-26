@@ -15,21 +15,24 @@
   ],
   "author": "Gil Pedersen <gpdev@gpost.dk>",
   "license": "BSD-3-Clause",
+  "peerDependencies": {
+    "hapi": ">=17.0.0"
+  },
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=8.9.0"
   },
   "dependencies": {
-    "boom": "^4.3.1",
-    "hoek": "^4.1.0",
-    "inert": "^4.2.0",
-    "items": "^2.1.1",
-    "joi": "^10.3.1",
-    "tar-stream": "1.5.3"
+    "boom": "^7.1.1",
+    "bounce": "^1.0.3",
+    "hoek": "^5.0.2",
+    "inert": "^5.0.1",
+    "joi": "^13.0.1",
+    "tar-stream": "1.5.5"
   },
   "devDependencies": {
-    "code": "^4.0.0",
-    "hapi": "^16.1.0",
-    "lab": "^13.0.1"
+    "code": "^5.1.2",
+    "hapi": "^17.0.0",
+    "lab": "^15.1.2"
   },
   "repository": {
     "type": "git",

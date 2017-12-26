@@ -14,6 +14,7 @@ const Hoek = require('hoek');
 const Inert = require('inert');
 const Lab = require('lab');
 const Tarm = require('..');
+const InertFs = require('inert/lib/fs');
 const Fixures = require('./fixtures');
 
 // Declare internals
@@ -23,192 +24,160 @@ const internals = {};
 
 // Test shortcuts
 
-const lab = exports.lab = Lab.script();
-const describe = lab.describe;
-const it = lab.it;
-const expect = Code.expect;
+const { describe, it } = exports.lab = Lab.script();
+const { expect } = Code;
 
 
 describe('tarmount', () => {
 
     describe('registration', () => {
 
-        it('throws when options are passed', (done) => {
-
-            const register = () => {
-
-                const server = new Hapi.Server();
-                server.register([Inert, {
-                    register: Tarm,
-                    options: { test: undefined }
-                }], Hoek.ignore);
-            };
-
-            expect(register).to.throw('Options are not supported');
-            done();
-        });
-
-        it('errors on start when inert is not registered', (done) => {
+        it('throws when options are passed', async () => {
 
             const server = new Hapi.Server();
-            server.connection();
-            server.register(Tarm, Hoek.ignore);
 
-            server.start((err) => {
+            await expect(server.register([Inert, {
+                plugin: Tarm,
+                options: { test: undefined }
+            }])).to.reject('Options are not supported');
+        });
 
-                expect(err).to.exist();
-                expect(err.message).to.contain('missing dependency inert');
-                done();
-            });
+        it('errors on start when inert is not registered', async () => {
+
+            const server = new Hapi.Server();
+            await server.register(Tarm);
+
+            await expect(server.start()).to.reject(/missing dependency inert/);
         });
     });
 
     describe('handler()', () => {
 
-        const provisionServer = (connection, debug) => {
+        const provisionServer = async (options, debug) => {
 
-            const server = new Hapi.Server({ debug });
-            server.connection(connection || { routes: { files: { relativeTo: __dirname } }, router: { stripTrailingSlash: false } });
-            server.register([Inert, Tarm], Hoek.ignore);
+            const server = new Hapi.Server(Object.assign(options || { routes: { files: { relativeTo: __dirname } }, router: { stripTrailingSlash: false } }, { debug }));
+            await server.register([Inert, Tarm]);
             return server;
         };
 
-        it('returns an embedded file', (done) => {
+        it('returns an embedded file', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.MULTI_FILE_TAR } } });
 
-            server.inject('/directory/file-2.txt', (res) => {
+            const res = await server.inject('/directory/file-2.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.payload).to.equal('i am file-2\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+            expect(res.payload).to.equal('i am file-2\n');
         });
 
-        it('handles relative reference to tar file', (done) => {
+        it('handles relative reference to tar file', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             const path = Path.relative(__dirname, Fixures.MULTI_FILE_TAR);
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path } } });
 
-            server.inject('/directory/file-1.txt', (res) => {
+            const res = await server.inject('/directory/file-1.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.payload).to.equal('i am file-1\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+            expect(res.payload).to.equal('i am file-1\n');
         });
 
-        it('handles unicode encoded file paths', (done) => {
+        it('handles unicode encoded file paths', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.UNICODE_TAR } } });
 
-            server.inject('/directory/h%C3%B8st%C3%A5l.txt', (res) => {
+            const res = await server.inject('/directory/h%C3%B8st%C3%A5l.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(8);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.payload).to.equal('høllø\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(8);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+            expect(res.payload).to.equal('høllø\n');
         });
 
-        it('handles unicode encoded file paths (BSD)', (done) => {
+        it('handles unicode encoded file paths (BSD)', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.UNICODE_BSD_TAR } } });
 
-            server.inject('/directory/h%C3%B8ll%C3%B8.txt', (res) => {
+            const res = await server.inject('/directory/h%C3%B8ll%C3%B8.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(4);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.payload).to.equal('hej\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(4);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+            expect(res.payload).to.equal('hej\n');
         });
 
-        it('handles long file paths', (done) => {
+        it('handles long file paths', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.LONG_NAME_TAR } } });
 
-            server.inject('/directory/my/file/is/longer/than/100/characters/and/should/use/the/prefix/header/foobarbaz/foobarbaz/foobarbaz/foobarbaz/foobarbaz/foobarbaz/filename.txt', (res) => {
+            const res = await server.inject('/directory/my/file/is/longer/than/100/characters/and/should/use/the/prefix/header/foobarbaz/foobarbaz/foobarbaz/foobarbaz/foobarbaz/foobarbaz/filename.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(16);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(16);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
         });
 
-        it('handles longpath encoded file paths', (done) => {
+        it('handles longpath encoded file paths', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.GNU_LONG_PATH } } });
 
-            server.inject('/directory/node-v0.11.14/deps/npm/node_modules/init-package-json/node_modules/promzard/example/npm-init/init-input.js', (res) => {
+            const res = await server.inject('/directory/node-v0.11.14/deps/npm/node_modules/init-package-json/node_modules/promzard/example/npm-init/init-input.js');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(6058);
-                expect(res.headers['content-type']).to.equal('application/javascript; charset=utf-8');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(6058);
+            expect(res.headers['content-type']).to.equal('application/javascript; charset=utf-8');
         });
 
-        it('handles base-256 encoded file sizes', (done) => {
+        it('handles base-256 encoded file sizes', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.BASE_256_SIZE } } });
 
-            server.inject('/directory/test.txt', (res) => {
+            const res = await server.inject('/directory/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
-                expect(res.payload).to.equal('hello world\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.headers['content-type']).to.equal('text/plain; charset=utf-8');
+            expect(res.payload).to.equal('hello world\n');
         });
 
-        it('returns an embedded file with gzip encoding', (done) => {
+        it('returns an embedded file with gzip encoding', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer({ compression: { minBytes: 1 } });
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.MULTI_FILE_TAR } } });
 
-            server.inject({ url: '/directory/file-1.txt', headers: { 'accept-encoding': 'gzip' } }, (res) => {
+            const res = await server.inject({ url: '/directory/file-1.txt', headers: { 'accept-encoding': 'gzip' } });
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-encoding']).to.equal('gzip');
-                expect(res.headers['content-length']).to.not.exist();
-                expect(Zlib.gunzipSync(res.rawPayload).toString()).to.equal('i am file-1\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-encoding']).to.equal('gzip');
+            expect(res.headers['content-length']).to.not.exist();
+            expect(Zlib.gunzipSync(res.rawPayload).toString()).to.equal('i am file-1\n');
         });
 
-        it('returns a file when requesting a file from multi directory setup', (done) => {
+        it('returns a file when requesting a file from multi directory setup', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/multiple/{path*}', handler: { tarmount: { path: [Fixures.ONE_FILE_TAR, Fixures.MULTI_FILE_TAR] } } });
 
-            server.inject('/multiple/test.txt', (res) => {
+            const res = await server.inject('/multiple/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.payload).to.equal('hello world\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.payload).to.equal('hello world\n');
         });
 
-        it('returns a file when requesting a file from a function response', (done) => {
+        it('returns a file when requesting a file from a function response', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({
                 method: 'GET',
                 path: '/single/{path*}',
@@ -222,18 +191,16 @@ describe('tarmount', () => {
                 }
             });
 
-            server.inject('/single/test.txt', (res) => {
+            const res = await server.inject('/single/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.payload).to.equal('hello world\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.payload).to.equal('hello world\n');
         });
 
-        it('returns a file when requesting a file from multi directory function response', (done) => {
+        it('returns a file when requesting a file from multi directory function response', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({
                 method: 'GET',
                 path: '/multiple/{path*}',
@@ -247,248 +214,216 @@ describe('tarmount', () => {
                 }
             });
 
-            server.inject('/multiple/test.txt', (res) => {
+            const res = await server.inject('/multiple/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.payload).to.equal('hello world\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.payload).to.equal('hello world\n');
         });
 
-        it('returns a 404 when requesting an unknown file', (done) => {
+        it('returns a 404 when requesting an unknown file', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.MULTI_FILE_TAR } } });
 
-            server.inject('/directory/xyz', (res) => {
+            const res = await server.inject('/directory/xyz');
 
-                expect(res.statusCode).to.equal(404);
-                done();
-            });
+            expect(res.statusCode).to.equal(404);
         });
 
-        it('returns a 403 when requesting an empty path', (done) => {
+        it('returns a 403 when requesting an empty path', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.ONE_FILE_TAR } } });
 
-            server.inject('/directory/', (res) => {
+            const res = await server.inject('/directory/');
 
-                expect(res.statusCode).to.equal(403);
-                done();
-            });
+            expect(res.statusCode).to.equal(403);
         });
 
-        it('returns a 403 when requesting a directory', (done) => {
+        it('returns a 403 when requesting a directory', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.TYPES_TAR } } });
 
-            server.inject('/directory/directory', (res) => {
+            const res = await server.inject('/directory/directory');
 
-                expect(res.statusCode).to.equal(403);
-                done();
-            });
+            expect(res.statusCode).to.equal(403);
         });
 
-        it('returns a 404 when tar file is not found', (done) => {
+        it('returns a 404 when tar file is not found', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.MISSING } } });
 
-            server.inject('/directory/file', (res) => {
+            const res = await server.inject('/directory/file');
 
-                expect(res.statusCode).to.equal(404);
-                done();
-            });
+            expect(res.statusCode).to.equal(404);
         });
 
-        it('returns error when tar file can not be opened', (done) => {
+        it('returns error when tar file can not be opened', async () => {
 
             const path = Hoek.uniqueFilename(Os.tmpdir()) + '-inaccessible.tar';
             Fs.closeSync(Fs.openSync(path, 'w'));
             Fs.chmodSync(path, 0);
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path } } });
 
-            server.inject('/directory/file', (res) => {
+            const res = await server.inject('/directory/file');
 
-                Fs.unlinkSync(path);
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            Fs.unlinkSync(path);
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.code).to.equal('EACCES');
         });
 
-        it('returns error when tar file can not be read', (done) => {
+        it('returns error when tar file can not be read', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.UNREADABLE } } });
 
-            server.inject('/directory/file', (res) => {
+            const res = await server.inject('/directory/file');
 
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.code).to.equal('EISDIR');
         });
 
-        it('returns error when tar file data can not be read', (done) => {
+        it('returns error when tar file data can not be read', async () => {
 
             const path = Hoek.uniqueFilename(Os.tmpdir()) + '-file.tar';
             Fs.writeFileSync(path, Fs.readFileSync(Fixures.ONE_FILE_TAR));
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path } } });
 
-            let opens = 0;
-
-            const orig = Fs.open;
-            Fs.open = function (openPath) {        // can return EMFILE error
+            const orig = InertFs.open;
+            InertFs.open = function (openPath) {        // can return EMFILE error
 
                 if (openPath === path) {
-                    if (++opens === 2) {
-                        const callback = arguments[arguments.length - 1];
-                        return callback(new Error('failed'));
-                    }
+                    throw new Error('oh noes');
                 }
 
-                return orig.apply(Fs, arguments);
+                return orig.apply(InertFs, arguments);
             };
 
-            server.inject('/directory/test.txt', (res) => {
+            const res = await server.inject('/directory/test.txt');
 
-                Fs.open = orig;
-                Fs.unlinkSync(path);
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            InertFs.open = orig;
+            Fs.unlinkSync(path);
+
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.message).to.contain('oh noes');
         });
 
-        it('returns a 404 when requesting a hidden file', (done) => {
+        it('returns a 404 when requesting a hidden file', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.HIDDEN_FILE } } });
 
-            server.inject('/directory/.hidden', (res) => {
+            const res = await server.inject('/directory/.hidden');
 
-                expect(res.statusCode).to.equal(404);
-                done();
-            });
+            expect(res.statusCode).to.equal(404);
         });
 
-        it('returns a file when requesting a hidden file with showHidden', (done) => {
+        it('returns a file when requesting a hidden file with showHidden', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.HIDDEN_FILE, showHidden: true } } });
 
-            server.inject('/directory/.hidden', (res) => {
+            const res = await server.inject('/directory/.hidden');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers['content-length']).to.equal(12);
-                expect(res.payload).to.equal('very secret\n');
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers['content-length']).to.equal(12);
+            expect(res.payload).to.equal('very secret\n');
         });
 
-        it('does not error on tar files that end without proper padding', (done) => {
+        it('does not error on tar files that end without proper padding', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.GNU_LONG_PATH } } });
 
-            server.inject('/directory/xyz', (res) => {
+            const res = await server.inject('/directory/xyz');
 
-                expect(res.statusCode).to.equal(404);
-                done();
-            });
+            expect(res.statusCode).to.equal(404);
         });
 
-        it('returns error when requesting an unhandled file type', (done) => {
+        it('returns error when requesting an unhandled file type', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.TYPES_TAR } } });
 
-            server.inject('/directory/directory-link', (res) => {
+            const res = await server.inject('/directory/directory-link');
 
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.message).to.equal('Unknown file type: symlink');
         });
 
-        it('returns error when reading from a non-tar file', (done) => {
+        it('returns error when reading from a non-tar file', async () => {
 
-            const server = provisionServer(null, false);
+            const server = await provisionServer(null, false);
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path: Fixures.INVALID_TGZ } } });
 
-            server.inject('/directory/file', (res) => {
+            const res = await server.inject('/directory/file');
 
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.message).to.contain('Decode failed: Invalid tar header');
         });
 
-        it('respects the etagMethod simple option', (done) => {
+        it('respects the etagMethod simple option', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/{p*}', handler: { tarmount: { path: Fixures.ONE_FILE_TAR, etagMethod: 'simple' } } });
 
-            server.inject('/test.txt', (res) => {
+            const res = await server.inject('/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers.etag).to.match(/^".+-.+"$/);
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers.etag).to.match(/^".+-.+"$/);
         });
 
-        it('respects the etagMethod false option', (done) => {
+        it('respects the etagMethod false option', async () => {
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/{p*}', handler: { tarmount: { path: Fixures.ONE_FILE_TAR, etagMethod: false } } });
 
-            server.inject('/test.txt', (res) => {
+            const res = await server.inject('/test.txt');
 
-                expect(res.statusCode).to.equal(200);
-                expect(res.headers.etag).to.not.exist();
-                done();
-            });
+            expect(res.statusCode).to.equal(200);
+            expect(res.headers.etag).to.not.exist();
         });
 
-        it('returns error when path function returns error', (done) => {
+        it('returns error when path function returns error', async () => {
 
             const path = () => {
 
                 return Boom.badRequest('Really?!');
             };
 
-            const server = provisionServer();
+            const server = await provisionServer();
             server.route({ method: 'GET', path: '/test/{path*}', handler: { tarmount: { path } } });
 
-            server.inject('/test/index.html', (res) => {
+            const res = await server.inject('/test/index.html');
 
-                expect(res.statusCode).to.equal(400);
-                expect(res.result.message).to.equal('Really?!');
-                done();
-            });
+            expect(res.statusCode).to.equal(400);
+            expect(res.result.message).to.equal('Really?!');
         });
 
-        it('returns error when path function returns invalid response', (done) => {
+        it('returns error when path function returns invalid response', async () => {
 
             const path = () => {
 
                 return 5;
             };
 
-            const server = provisionServer(null, false);
+            const server = await provisionServer(null, false);
             server.route({ method: 'GET', path: '/test/{path*}', handler: { tarmount: { path } } });
 
-            server.inject('/test/index.html', (res) => {
+            const res = await server.inject('/test/index.html');
 
-                expect(res.statusCode).to.equal(500);
-                done();
-            });
+            expect(res.statusCode).to.equal(500);
+            expect(res.request.response._error.message).to.contain('Invalid path function');
         });
 
-        it('has not leaked file descriptors', { skip: process.platform === 'win32' }, (done) => {
+        it('has not leaked file descriptors', { skip: process.platform === 'win32' }, async () => {
 
             // validate that all descriptors has been closed
             const cmd = ChildProcess.spawn('lsof', ['-p', process.pid]);
@@ -498,19 +433,25 @@ describe('tarmount', () => {
                 lsof += buffer.toString();
             });
 
-            cmd.stdout.on('end', () => {
+            const end = new Promise((resolve, reject) => {
 
-                let count = 0;
-                const lines = lsof.split('\n');
-                for (let i = 0; i < lines.length; ++i) {
-                    count += !!lines[i].match(/\.tar$/);
-                }
+                cmd.stdout.on('end', () => {
 
-                expect(count).to.equal(0);
-                done();
+                    let count = 0;
+                    const lines = lsof.split('\n');
+                    for (let i = 0; i < lines.length; ++i) {
+                        count += !!lines[i].match(/\.tar$/);
+                    }
+
+                    resolve(count);
+                });
+
+                cmd.stdout.on('error', reject);
             });
 
             cmd.stdin.end();
+
+            expect(await end).to.equal(0);
         });
     });
 });
