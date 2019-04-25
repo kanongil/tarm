@@ -5,7 +5,7 @@ Tarmount handler plugin for hapi.js.
 [![Build Status](https://travis-ci.org/kanongil/tarm.svg?branch=master)](https://travis-ci.org/kanongil/tarm)
 
 **tarm** provides a new `tarmount` [handler](https://github.com/hapijs/hapi/blob/master/API.md#route.options.handler)
-method for serving the contents of tar files using `inert`.
+method for serving the contents of tar files using `@hapi/inert`.
 
 ## Examples
 
@@ -19,8 +19,8 @@ The following creates a basic static file server that can be used to serve conte
 ```js
 const Path = require('path');
 
-const Hapi = require('hapi');
-const Inert = require('inert');
+const Hapi = require('@hapi/hapi');
+const Inert = require('@hapi/inert');
 const Tarm = require('tarm');
 
 const server = Hapi.Server({ port: 3000 });
@@ -50,7 +50,7 @@ provision();
 ## Usage
 
 After registration, this plugin enables the `'tarmount'` route handler.
-Note that `inert` is required to be registered as well. Eg:
+Note that `@hapi/inert` is required to be registered as well. Eg:
 
 ```js
 await server.register([Inert, Tarm]);
