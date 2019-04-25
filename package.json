@@ -4,8 +4,8 @@
   "description": "Serve tar file contents using hapi",
   "main": "lib/index.js",
   "scripts": {
-    "test": "lab -f -a code -t 100 -L",
-    "test-cov-html": "lab -f -a code -r html -o coverage.html"
+    "test": "lab -f -a @hapi/code -t 100 -L",
+    "test-cov-html": "lab -f -a @hapi/code -r html -o coverage.html"
   },
   "keywords": [
     "tar",
@@ -16,23 +16,23 @@
   "author": "Gil Pedersen <gpdev@gpost.dk>",
   "license": "BSD-3-Clause",
   "peerDependencies": {
-    "hapi": ">=17.0.0"
+    "@hapi/hapi": ">=17.9.0"
   },
   "engines": {
     "node": ">=8.9.0"
   },
   "dependencies": {
-    "boom": "^7.1.1",
-    "bounce": "^1.0.3",
-    "hoek": "^5.0.2",
-    "inert": "^5.0.1",
-    "joi": "^13.0.1",
-    "tar-stream": "1.5.5"
+    "@hapi/boom": "^7.4.2",
+    "@hapi/bounce": "^1.3.0",
+    "@hapi/hoek": "^6.2.1",
+    "@hapi/inert": "^5.2.0",
+    "@hapi/joi": "^15.0.0",
+    "tar-stream": "2.0.1"
   },
   "devDependencies": {
-    "code": "^5.1.2",
-    "hapi": "^17.0.0",
-    "lab": "^15.1.2"
+    "@hapi/code": "^5.3.1",
+    "@hapi/hapi": "^18.3.1",
+    "@hapi/lab": "^18.1.2"
   },
   "repository": {
     "type": "git",

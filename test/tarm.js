@@ -7,14 +7,14 @@ const Fs = require('fs');
 const Os = require('os');
 const Path = require('path');
 const Zlib = require('zlib');
-const Boom = require('boom');
-const Code = require('code');
-const Hapi = require('hapi');
-const Hoek = require('hoek');
-const Inert = require('inert');
-const Lab = require('lab');
+const Boom = require('@hapi/boom');
+const Code = require('@hapi/code');
+const Hapi = require('@hapi/hapi');
+const Hoek = require('@hapi/hoek');
+const Inert = require('@hapi/inert');
+const Lab = require('@hapi/lab');
 const Tarm = require('..');
-const InertFs = require('inert/lib/fs');
+const InertFs = require('@hapi/inert/lib/fs');
 const Fixures = require('./fixtures');
 
 // Declare internals
@@ -297,13 +297,13 @@ describe('tarmount', () => {
             server.route({ method: 'GET', path: '/directory/{path*}', handler: { tarmount: { path } } });
 
             const orig = InertFs.open;
-            InertFs.open = function (openPath) {        // can return EMFILE error
+            InertFs.open = function (openPath, ...args) {        // can return EMFILE error
 
                 if (openPath === path) {
                     throw new Error('oh noes');
                 }
 
-                return orig.apply(InertFs, arguments);
+                return orig.call(InertFs, openPath, ...args);
             };
 
             const res = await server.inject('/directory/test.txt');
