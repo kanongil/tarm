@@ -9,8 +9,8 @@ const Path = require('path');
 const Zlib = require('zlib');
 const Boom = require('@hapi/boom');
 const Code = require('@hapi/code');
+const File = require('@hapi/file');
 const Hapi = require('@hapi/hapi');
-const Hoek = require('@hapi/hoek');
 const Inert = require('@hapi/inert');
 const Lab = require('@hapi/lab');
 const Tarm = require('..');
@@ -263,7 +263,7 @@ describe('tarmount', () => {
 
         it('returns error when tar file can not be opened', async () => {
 
-            const path = Hoek.uniqueFilename(Os.tmpdir()) + '-inaccessible.tar';
+            const path = File.uniqueFilename(Os.tmpdir()) + '-inaccessible.tar';
             Fs.closeSync(Fs.openSync(path, 'w'));
             Fs.chmodSync(path, 0);
 
@@ -290,7 +290,7 @@ describe('tarmount', () => {
 
         it('returns error when tar file data can not be read', async () => {
 
-            const path = Hoek.uniqueFilename(Os.tmpdir()) + '-file.tar';
+            const path = File.uniqueFilename(Os.tmpdir()) + '-file.tar';
             Fs.writeFileSync(path, Fs.readFileSync(Fixures.ONE_FILE_TAR));
 
             const server = await provisionServer();
