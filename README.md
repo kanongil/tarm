@@ -73,8 +73,7 @@ object with the following options:
       - an array of path strings. Each path will be attempted in order until a match is
         found (by following the same process as the single path string).
       - a function with the signature `function(request)` which returns the path string or
-        an array of path strings. If the function returns an error, the error is passed back
-        to the client in the response.
+        an array of path strings. Any thrown error is passed back to the client in the response.
   - `showHidden` - optional boolean, determines if hidden files will be shown and served.
     Defaults to `false`.
   - `etagMethod` - specifies the method used to calculate the `ETag` header response.

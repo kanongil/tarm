@@ -391,11 +391,11 @@ describe('tarmount', () => {
             expect(res.headers.etag).to.not.exist();
         });
 
-        it('returns error when path function returns error', async () => {
+        it('responds with error when path function throws', async () => {
 
             const path = () => {
 
-                return Boom.badRequest('Really?!');
+                throw Boom.badRequest('Really?!');
             };
 
             const server = await provisionServer();
@@ -420,7 +420,7 @@ describe('tarmount', () => {
             const res = await server.inject('/test/index.html');
 
             expect(res.statusCode).to.equal(500);
-            expect(res.request.response._error.message).to.contain('Invalid path function');
+            expect(res.request.response._error.message).to.contain('Invalid path function response');
         });
 
         it('has not leaked file descriptors', { skip: process.platform === 'win32' }, async () => {
