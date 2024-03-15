@@ -3,8 +3,9 @@
   "version": "2.1.1",
   "description": "Serve tar file contents using hapi",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "lab -f -a @hapi/code -t 100 -L",
+    "test": "lab -f -a @hapi/code -t 100 -L -Y",
     "test-cov-html": "lab -f -a @hapi/code -r html -o coverage.html"
   },
   "keywords": [
@@ -26,7 +27,7 @@
     "@hapi/bounce": "^3.0.1",
     "@hapi/hoek": "^11.0.4",
     "@hapi/inert": "^7.1.0",
-    "@hapi/joi": "^17.1.1",
+    "joi": "^17.11.0",
     "tar-stream": "^3.1.6"
   },
   "devDependencies": {
@@ -34,7 +35,9 @@
     "@hapi/eslint-plugin": "^6.0.0",
     "@hapi/file": "^3.0.0",
     "@hapi/hapi": "^21.3.2",
-    "@hapi/lab": "^25.1.3"
+    "@hapi/lab": "^25.1.3",
+    "@types/node": "^18.19.3",
+    "typescript": "~5.3.3"
   },
   "repository": {
     "type": "git",
