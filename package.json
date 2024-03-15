@@ -1,6 +1,6 @@
 {
   "name": "tarm",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "description": "Serve tar file contents using hapi",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
